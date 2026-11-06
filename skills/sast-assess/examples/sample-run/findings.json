@@ -1,0 +1,75 @@
+[
+  {
+    "verdict": "needs_validation",
+    "fingerprint": "authz/admin-export/network-only-guard",
+    "title": "Admin data export relies on a network allowlist that is not in the repository",
+    "description": "The admin export route has no role check of its own. A comment says access is limited by an IP allowlist at the load balancer, which the repository does not define.",
+    "claimed_root_cause": "GET /admin/export authenticates the session but does not check for the admin role; the only stated control is a network allowlist outside the repository.",
+    "trace": [
+      {"kind": "entrypoint", "file": "src/routes/admin.ts", "line": 18, "scope": "router.get('/admin/export')", "description": "Route registered with requireSession only."},
+      {"kind": "sink", "file": "src/services/export.ts", "line": 42, "scope": "exportAllAccounts", "description": "Streams every account record as CSV."}
+    ],
+    "evidence": [
+      {"file": "src/routes/admin.ts", "line": 16, "description": "Comment: access restricted by load balancer allowlist."}
+    ],
+    "blockers": [
+      "Whether the deployed load balancer restricts /admin/export to an allowlist is not in the repository."
+    ],
+    "validation_plan": {
+      "deployment": "Ask the platform owner to confirm, from the load balancer configuration, which source addresses can reach /admin/export, and whether a signed-in non-admin user on an allowed address can call it."
+    }
+  },
+  {
+    "verdict": "confirmed",
+    "fingerprint": "authz/invoice-download/missing-owner-check",
+    "title": "Invoice download returns invoices belonging to other users",
+    "description": "The invoice download route looks up an invoice by id without checking that it belongs to the signed-in user's account.",
+    "root_cause": "findInvoiceById selects by primary key only; no ownership predicate is applied on this path.",
+    "intended_behavior": "A user can download only invoices that belong to their own account.",
+    "trace": [
+      {"kind": "entrypoint", "file": "src/routes/invoices.ts", "line": 41, "scope": "router.get('/invoices/:id/download')", "description": "Takes the invoice id from the URL."},
+      {"kind": "propagation", "file": "src/services/invoices.ts", "line": 88, "scope": "findInvoiceById", "description": "Queries by id only."},
+      {"kind": "sink", "file": "src/routes/invoices.ts", "line": 47, "scope": "router.get('/invoices/:id/download')", "description": "Streams the invoice PDF to the caller."}
+    ],
+    "evidence": [
+      {"file": "src/services/invoices.ts", "line": 60, "description": "listInvoices applies the account predicate that findInvoiceById lacks."}
+    ],
+    "conditions": [
+      {"kind": "authentication_level", "description": "The caller has an ordinary signed-in session."}
+    ],
+    "execution": {
+      "attacker_perspective": "Dummy user B, signed in, requests an invoice id that belongs to dummy user A.",
+      "payloads": ["GET /invoices/inv_a_001/download with user B's test session"],
+      "instructions": [
+        "Regression test test/invoices.ownership.test.ts seeds two dummy accounts and one invoice for account A.",
+        "It signs in as user B and requests account A's invoice through the route handler on isolated loopback.",
+        "Run inside the sandbox: npm test -- test/invoices.ownership.test.ts"
+      ],
+      "observed_result": "The test failed on the untouched source: the handler returned 200 and account A's invoice PDF to user B, where the test expected 404."
+    },
+    "remediation": {
+      "strategy": "Apply the account predicate in findInvoiceById, or call it only through an account-scoped query, so the download route cannot read another account's invoice."
+    },
+    "severity": {
+      "likelihood": {"score": "high", "reason": "Any signed-in user can change the id in the URL."},
+      "impact": {"score": "high", "reason": "Cross-account read of invoices, which hold names, addresses and amounts."},
+      "overall_severity": "high"
+    },
+    "confidence": {"score": "high", "reason": "Complete source trace and a failing local test reproduced by an independent verifier."}
+  },
+  {
+    "verdict": "rejected",
+    "fingerprint": "sqli/report-export/order-by",
+    "title": "Report export builds ORDER BY from a request parameter",
+    "description": "A scanner flagged string concatenation of the sort parameter into SQL.",
+    "claimed_root_cause": "The sort query parameter is concatenated into the ORDER BY clause.",
+    "trace": [
+      {"kind": "entrypoint", "file": "src/reports/export.ts", "line": 31, "scope": "exportReport", "description": "Reads req.query.sort."},
+      {"kind": "sink", "file": "src/reports/export.ts", "line": 57, "scope": "exportReport", "description": "Concatenates the column into ORDER BY."}
+    ],
+    "evidence": [
+      {"file": "src/reports/export.ts", "line": 50, "description": "sort is checked against a fixed list of column names and replaced with the default otherwise."}
+    ],
+    "reason": "The value reaching the query is always one of five fixed column names, so request input cannot change the SQL."
+  }
+]

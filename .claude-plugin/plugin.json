@@ -1,0 +1,10 @@
+{
+  "name": "ai-sast-skills",
+  "description": "AI-assisted SAST for public-sector security teams: triage, assessment on Cloudflare's security-audit method, owner reporting and QA, with departmental run control and claims control",
+  "version": "0.1.0",
+  "author": {
+    "name": "Chris Renga"
+  },
+  "license": "MIT",
+  "repository": "https://github.com/chrisrenga/ai-sast-skills"
+}

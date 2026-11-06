@@ -1,0 +1,8 @@
+# Assessment outputs, scan copies and findings never belong in this repository.
+node_modules/
+*.manifest.json
+scan-copy*/
+output/
+runs/
+report/
+.DS_Store

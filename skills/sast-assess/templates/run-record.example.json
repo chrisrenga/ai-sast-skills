@@ -1,0 +1,45 @@
+{
+  "run_id": "run-1",
+  "scope": {
+    "assessment_id": "SEC-2026-014",
+    "approved_by": "Head of Cyber Assurance",
+    "approved_on": "2026-11-06",
+    "repositories": [
+      {"name": "example-service", "source_ref": "main"}
+    ],
+    "attacker_classes": ["unauthenticated-internet-user", "authenticated-user"],
+    "severity_threshold": "medium",
+    "reporting_threshold": "low",
+    "execution": "sandboxed-local",
+    "sandbox": "Rootless container, no network, read-only source, 1 CPU, 1 GiB, 5 minute limit per check",
+    "scanner_pass": {"allowed": true, "tools": ["semgrep", "gitleaks"]},
+    "model_route": "Departmental enterprise agreement via the approved gateway",
+    "output_location": "Assessment share: /assessments/SEC-2026-014/run-1",
+    "retention": "Deleted 90 days after the last owner report-back",
+    "profile": "standard",
+    "budget": 40
+  },
+  "target": {
+    "repository": "example-service",
+    "source_ref": "0123456789abcdef0123456789abcdef01234567",
+    "scan_copy": "/assessments/SEC-2026-014/scan-copy",
+    "manifest": "/assessments/SEC-2026-014/scan-copy.manifest.json"
+  },
+  "tools": {
+    "agent_client": "Example agent client",
+    "agent_client_version": "1.0.0",
+    "skill_pack_version": "0.1.0",
+    "cloudflare_method_commit": "c1c8a8c1471069fb0e188eeaff69b8e8db6564a8"
+  },
+  "stages": [
+    {"stage": "recon", "model": "model-a", "model_version": "2026-09"},
+    {"stage": "hunt", "model": "model-a", "model_version": "2026-09"},
+    {"stage": "critic", "model": "model-a", "model_version": "2026-09"},
+    {"stage": "validate", "model": "model-b", "model_version": "2026-10"},
+    {"stage": "verify", "model": "model-b", "model_version": "2026-10"},
+    {"stage": "report", "model": "model-a", "model_version": "2026-09"}
+  ],
+  "same_model_verification": false,
+  "run_status": "complete",
+  "incomplete_reason": null
+}

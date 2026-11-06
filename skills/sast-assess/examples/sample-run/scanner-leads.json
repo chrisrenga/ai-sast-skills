@@ -1,0 +1,4 @@
+[
+  {"lead_id": "L001", "tool": "semgrep", "tool_version": "1.x", "rule_id": "javascript.lang.security.audit.sqli.string-concat", "file": "src/reports/export.ts", "line": 57, "class": "SQL injection", "disposition": "candidate", "fingerprint": "sqli/report-export/order-by", "reason": null},
+  {"lead_id": "L002", "tool": "semgrep", "tool_version": "1.x", "rule_id": "javascript.express.security.open-redirect", "file": "src/routes/auth.ts", "line": 73, "class": "Open redirect", "disposition": "rejected", "fingerprint": null, "reason": "The return URL is checked against same-origin paths at line 69."}
+]

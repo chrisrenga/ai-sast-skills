@@ -1,0 +1,13 @@
+{
+  "name": "ai-sast-skills",
+  "version": "0.1.0",
+  "private": true,
+  "description": "AI-assisted SAST skills for public-sector security teams",
+  "license": "MIT",
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "test": "node --test"
+  }
+}

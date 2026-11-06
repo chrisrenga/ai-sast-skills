@@ -1,0 +1,13 @@
+{
+  "name": "ai-sast-skills",
+  "owner": {
+    "name": "Chris Renga"
+  },
+  "plugins": [
+    {
+      "name": "ai-sast-skills",
+      "source": "./",
+      "description": "AI-assisted SAST skills for public-sector security teams"
+    }
+  ]
+}

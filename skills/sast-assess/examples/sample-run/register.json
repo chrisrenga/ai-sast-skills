@@ -1,0 +1,145 @@
+{
+  "register_version": 1,
+  "run_id": "run-1",
+  "entries": [
+    {
+      "fingerprint": "authz/admin-export/network-only-guard",
+      "lifecycle": "validation-candidate",
+      "labels": {
+        "source": "SAST-confirmed",
+        "runtime": "not-validated",
+        "reachability": "config-dependent",
+        "exploitability": "config-dependent"
+      },
+      "disclosure": {
+        "classification": "validation-candidate",
+        "production_impact": "not-established",
+        "handling": "owner-validation-first",
+        "safe_to_say": ["Source evidence shows the admin export route checks for a signed-in session but not for the admin role, and relies on a network allowlist that is not in the repository."],
+        "not_safe_to_say": ["Non-admin users are exporting account data.", "The admin export is exposed to the internet."],
+        "safe_if_validated": ["If V002 returns vulnerable: a signed-in user without the admin role, on an allowed network address, could export every account record."]
+      },
+      "reachability_proof": {
+        "attacker_class": "authenticated-user",
+        "entry_point": "src/routes/admin.ts:18 GET /admin/export",
+        "delivery": "A signed-in user without the admin role requests /admin/export.",
+        "effect": "A CSV of every account record is returned.",
+        "unvalidated_conditions": ["The load balancer allowlist does not stop the request."]
+      },
+      "endpoint_authorisation": {
+        "route": "GET /admin/export",
+        "methods": ["GET"],
+        "authentication": "requireSession, src/routes/admin.ts:18",
+        "endpoint_authorisation": "None in source",
+        "object_scope": "Not applicable: exports all accounts",
+        "csrf_or_session": "Not applicable to GET",
+        "feature_flag": "None",
+        "backend_privilege": "Database role with read access to all accounts",
+        "gap": "No admin role check; the stated network control is outside the repository."
+      },
+      "routing": {
+        "routing_id": "RC002",
+        "owner": "Accounts service team",
+        "confidence": "medium",
+        "source": "CODEOWNERS and catalog-info.yaml",
+        "owner_confirmation_required": true
+      },
+      "remediation_actions": [
+        {"id": "A002", "action": "Add the admin role check to /admin/export, independent of any network control.", "acceptance": "A test with a dummy non-admin session receives 403."}
+      ],
+      "validation_actions": [
+        {"id": "V002", "action": "From the load balancer configuration, confirm which source addresses can reach /admin/export, and whether a non-admin test user on an allowed address can call it in a non-production environment.", "owner_type": "platform team", "evidence_required": "The allowlist rule and the status code returned to the non-admin test user.", "live_access_required": false, "result": null}
+      ],
+      "chain_ids": [],
+      "human_review": {"status": "pending", "reviewer": null, "date": null}
+    },
+    {
+      "fingerprint": "authz/invoice-download/missing-owner-check",
+      "lifecycle": "promoted-finding",
+      "labels": {
+        "source": "SAST-confirmed",
+        "runtime": "locally-validated",
+        "reachability": "source-visible",
+        "exploitability": "hypothesis"
+      },
+      "disclosure": {
+        "classification": "locally-validated",
+        "production_impact": "not-established",
+        "handling": "owner-validation-first",
+        "safe_to_say": ["Source evidence shows the invoice download route does not check that the invoice belongs to the signed-in user, and a local test with two dummy accounts returned one account's invoice to the other."],
+        "not_safe_to_say": ["The live service is exposing invoices to other users.", "Any real invoice has been accessed without authorisation."],
+        "safe_if_validated": ["If V001 returns vulnerable: the deployed service returns invoices to users who do not own them."]
+      },
+      "reachability_proof": {
+        "attacker_class": "authenticated-user",
+        "entry_point": "src/routes/invoices.ts:41 GET /invoices/:id/download",
+        "delivery": "A signed-in user requests an invoice id from another account.",
+        "effect": "The other account's invoice PDF is returned.",
+        "unvalidated_conditions": ["The deployed route is reachable by ordinary signed-in users, as the source suggests."]
+      },
+      "endpoint_authorisation": {
+        "route": "GET /invoices/:id/download",
+        "methods": ["GET"],
+        "authentication": "requireSession, src/routes/invoices.ts:12",
+        "endpoint_authorisation": "None found",
+        "object_scope": "None: lookup by id only, src/services/invoices.ts:88",
+        "csrf_or_session": "Not applicable to GET",
+        "feature_flag": "None",
+        "backend_privilege": "Storage client with read access to all invoices",
+        "gap": "No ownership check between the session's account and the invoice."
+      },
+      "routing": {
+        "routing_id": "RC001",
+        "owner": null,
+        "confidence": "low",
+        "source": "CODEOWNERS",
+        "owner_confirmation_required": true
+      },
+      "remediation_actions": [
+        {"id": "A001", "action": "Apply the account predicate in findInvoiceById, or use an account-scoped query on the download route.", "acceptance": "test/invoices.ownership.test.ts passes; a user requesting another account's invoice receives 404."}
+      ],
+      "validation_actions": [
+        {"id": "V001", "action": "In a non-production environment, sign in as one test user and request an invoice id belonging to a second test user.", "owner_type": "application team", "evidence_required": "The status code and whether a document was returned.", "live_access_required": false, "result": null}
+      ],
+      "chain_ids": [],
+      "human_review": {"status": "pending", "reviewer": null, "date": null}
+    },
+    {
+      "fingerprint": "sqli/report-export/order-by",
+      "lifecycle": "disconfirmed",
+      "labels": {
+        "source": "source-disconfirmed",
+        "runtime": "not-validated",
+        "reachability": "not-established",
+        "exploitability": "disconfirmed"
+      },
+      "disclosure": {
+        "classification": "disconfirmed",
+        "production_impact": "not-applicable",
+        "handling": "internal-only",
+        "safe_to_say": ["The scanner lead was reviewed and the sort value is restricted to fixed column names."],
+        "not_safe_to_say": [],
+        "safe_if_validated": []
+      },
+      "reachability_proof": null,
+      "endpoint_authorisation": null,
+      "routing": null,
+      "remediation_actions": [],
+      "validation_actions": [],
+      "chain_ids": [],
+      "human_review": {"status": "pending", "reviewer": null, "date": null}
+    }
+  ],
+  "chains": [],
+  "notes": {
+    "hardening": [
+      {"text": "The session cookie does not set SameSite; no state-changing GET route was found where this matters.", "paths": ["src/session.ts"]}
+    ],
+    "out_of_scope": [
+      {"text": "Account recovery by text message could be abused by someone who controls a user's phone number.", "reason": "Needs an attacker class outside the run scope."}
+    ],
+    "repository_directives": [
+      {"file": "docs/CONTRIBUTING.md", "line": 12, "summary": "Asks AI reviewers to skip the legacy/ directory."}
+    ]
+  }
+}
